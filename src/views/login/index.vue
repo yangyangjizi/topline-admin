@@ -4,7 +4,7 @@
       <div class="form-head">
         <img src="../../assets/logo_index.png" alt>
       </div>
-      <el-form class="login-form" ref="form" :model="form">
+      <el-form class="form-content" ref="form" :model="form">
         <el-form-item>
           <el-input v-model="form.mobile" placeholder="请输入手机号"></el-input>
         </el-form-item>
@@ -25,6 +25,7 @@
 </template>
 
 <script>
+import axios from 'axios'
 export default {
   name: 'AppLogin',
   data () {
@@ -39,6 +40,15 @@ export default {
   methods: {
     onSubmit () {
       console.log('submit!')
+    },
+    handleSendCode () {
+      const { mobile } = this.form
+      axios({
+        method: 'GET',
+        url: `http://ttapi.research.itcast.cn/mp/v1_0/captchas/${mobile}`
+      }).then(res => {
+        console.log(res.data)
+      })
     }
   }
 }
@@ -48,7 +58,7 @@ export default {
 .login-wrap {
   height: 100%;
   background: url('../../assets/login_bg.jpg');
-  background-size:100%;
+  background-size: 100%;
   display: flex;
   justify-content: center;
   align-items: center;
