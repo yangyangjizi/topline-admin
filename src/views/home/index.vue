@@ -1,7 +1,7 @@
 <template>
-    <div>
-        <p>Home Component</p>
-    </div>
+  <div>
+    <p>Home Component</p>
+  </div>
 </template>
 
 <script>
@@ -22,5 +22,4 @@ export default {
 </script>
 
 <style scoped>
-
 </style>
