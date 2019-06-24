@@ -2,7 +2,7 @@
   <div class="login-wrap">
     <div class="form-wrap">
       <div class="form-head">
-        <img src="./logo_index.png" alt>
+        <img src="./logo_index.png" alt />
       </div>
       <!-- 配置校验规则 rules 规则对象配置到el-form上 prop 校验字段配置到el-form-item上 。 js触发验证 ，ref， this.$refs['refs名字']。validate（valid =>{}）方法来调用实现-->
       <el-form class="form-content" ref="form" :model="form" :rules="rules">
@@ -15,11 +15,16 @@
           </el-col>
           <el-col :offset="1" :span="9">
             <!-- <el-button @click="handleSendCode">获取验证码</el-button> -->
-            <el-button @click="handleSendCode" :disabled="!!codeTimer">{{ codeTimer ? `剩余${codeTimeSeconds}秒` : '获取验证码'}}</el-button>
+            <el-button @click="handleSendCode" :disabled="!!codeTimer">{{
+              codeTimer ? `剩余${codeTimeSeconds}秒` : '获取验证码'
+            }}</el-button>
           </el-col>
         </el-form-item>
         <el-form-item prop="agree">
-          <el-checkbox class="agree-checkbox" v-model="form.agree"></el-checkbox>
+          <el-checkbox
+            class="agree-checkbox"
+            v-model="form.agree"
+          ></el-checkbox>
           <span class="agree-text">
             我已阅读并同意
             <a href="#">用户协议</a>和
@@ -27,7 +32,9 @@
           </span>
         </el-form-item>
         <el-form-item>
-          <el-button class="btn-login" type="primary" @click="handleLogin">登录</el-button>
+          <el-button class="btn-login" type="primary" @click="handleLogin"
+            >登录</el-button
+          >
         </el-form-item>
       </el-form>
     </div>
