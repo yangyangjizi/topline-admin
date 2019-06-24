@@ -15,9 +15,23 @@ export default new Router({
     //   component: () => import('@/views/home/index.vue')
     // },
     {
-      name: 'layout',
+      // layout显示到App跟组建的路由出口
+      // name: 'layout',
       path: '/',
-      component: () => import('@/views/layout')
+      component: () => import('@/views/layout'),
+      children: [
+        // 所有的children路由都显示到父路由的router-view中
+        {
+          name: 'home',
+          path: '',
+          component: () => import('@/views/home')
+        },
+        {
+          name: 'publish',
+          path: '/publish',
+          component: () => import('@/views/publish')
+        }
+      ]
     },
     {
       name: 'login',
