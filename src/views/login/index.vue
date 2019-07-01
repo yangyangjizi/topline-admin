@@ -15,9 +15,14 @@
           </el-col>
           <el-col :offset="1" :span="9">
             <!-- <el-button @click="handleSendCode">获取验证码</el-button> -->
-            <el-button @click="handleSendCode" :disabled="!!codeTimer">{{
-              codeTimer ? `剩余${codeTimeSeconds}秒` : '获取验证码'
-            }}</el-button>
+            <el-button
+              :loading="codeLoading"
+              @click="handleSendCode"
+              :disabled="!!codeTimer"
+              >{{
+                codeTimer ? `剩余${codeTimeSeconds}秒` : '获取验证码'
+              }}</el-button
+            >
           </el-col>
         </el-form-item>
         <el-form-item prop="agree">
@@ -32,7 +37,11 @@
           </span>
         </el-form-item>
         <el-form-item>
-          <el-button class="btn-login" type="primary" @click="handleLogin"
+          <el-button
+            class="btn-login"
+            type="primary"
+            @click="handleLogin"
+            :loading="loginLoading"
             >登录</el-button
           >
         </el-form-item>
@@ -42,8 +51,10 @@
 </template>
 
 <script>
-import axios from 'axios'
-import '@/vendor/gt'//  引入极验 jsSDX文件，通过window.initGeetest使用z这个插件
+// import '@/vendor/gt'//  引入极验 jsSDX文件，通过window.initGeetest使用z这个插件
+import { saveUser } from '@/utils/auth' // 按需加载模块中非 export default 成员
+import initGeetest from '@/utils/init-geetest'
+
 const initCodeTimeSeconds = 10
 export default {
   name: 'AppLogin',
@@ -72,7 +83,9 @@ export default {
       },
       // 处理倒计时定时器和倒计时事件
       codeTimer: null,
-      codeTimeSeconds: initCodeTimeSeconds
+      codeTimeSeconds: initCodeTimeSeconds,
+      loginLoading: false, // 登录中的loading
+      codeLoading: false
     }
   },
   created () { },
@@ -87,27 +100,32 @@ export default {
         this.submitLogin()
       })
     },
-    submitLogin () {
-      axios({
-        method: 'POST',
-        url: 'http://ttapi.research.itcast.cn/mp/v1_0/authorizations',
-        data: this.form
-      })
-        .then(res => {
-          const userInfo = res.data.data
-          window.localStorage.setItem('user_info', JSON.stringify(userInfo))
-          this.$message({
-            message: '登录成功',
-            type: 'success'
-          })
-          this.$router.push({
-            name: 'home'
-          })
+    async submitLogin () {
+      this.loginLoading = true
+      try {
+        const userInfo = await this.$http({
+          method: 'POST',
+          url: '/authorizations', // 246810 测试账号13911111111
+          // 下面的链接是学校的内网，上面的是外网链接
+          // url: 'http://toutiao.course.itcast.cn/mp/v1_0/authorizations',
+          data: this.form
         })
-        .catch((e) => {
-          this.$message.error('登录失败，手机号或验证码错误')
+        // const userInfo = res.data.data
+        // window.localStorage.setItem('user_info', JSON.stringify(userInfo))
+        saveUser(userInfo)
+        this.$message({
+          message: '登录成功',
+          type: 'success'
         })
+        this.$router.push({
+          name: 'home'
+        })
+      } catch (err) {
+        this.$message.error('登录失败，手机号或验证码错误')
+        this.loginLoading = false
+      }
     },
+
     handleSendCode () {
       // 验证手机号是否有效
       this.$refs['form'].validateField('mobile', errorMessage => {
@@ -118,51 +136,61 @@ export default {
         this.showGeetest()
       })
     },
-    showGeetest () {
-      const { mobile } = this.form
-      axios({
-        method: 'GET',
-        url: `http://ttapi.research.itcast.cn/mp/v1_0/captchas/${mobile}`
-      }).then(res => {
-        const { data } = res.data
-        window.initGeetest({
-          // 以下配置参数来自服务器SDX
+    /**
+     * 验证通过，初始化显示人机交互验证码
+     */
+    async showGeetest () {
+      this.codeLoading = true
+      try {
+        this.codeLoading = true
+        // 任何函数中的 function 函数内部的 this 指向 window
+        const { mobile } = this.form
+        const data = await this.$http({
+          method: 'GET',
+          url: `/captchas/${mobile}`
+        })
+        const captchaObj = await initGeetest({
+          // 以下配置参数来自服务端 SDK
           gt: data.gt,
           challenge: data.challenge,
           offline: !data.success,
           new_captcha: data.new_captcha,
-          product: 'bind'
-        }, captchaObj => {
-          captchaObj.onReady(() => {
-            // 验证码ready之后才能调用verify方法显示验证码 弹出验证码内容框
-            captchaObj.verify()
-          }).onSuccess(() => {
+          product: 'bind' // 隐藏，直接弹出式
+        })
+        captchaObj.onReady(() => {
+          this.codeLoading = false
+          // 验证码ready之后才能调用verify方法显示验证码
+          captchaObj.verify() // 弹出验证码内容框
+        }).onSuccess(async () => {
+          try {
+            // your code
             const {
               geetest_challenge: challenge,
               geetest_seccode: seccode,
               geetest_validate: validate } =
               captchaObj.getValidate()
-
-            axios({
+            // 发送短信
+            await this.$http({
               method: 'GET',
-              url: `http://ttapi.research.itcast.cn/mp/v1_0/sms/codes/${mobile}`,
+              url: `/sms/codes/${mobile}`,
               params: {
                 challenge,
                 validate,
                 seccode
               }
-            }).then(res => {
-              // 发送短信成功，开始倒计时
-              this.codeCountDown()
             })
-          }).onError(function () {
-
-          })
-          // 在这里注册的“发送验证码”按钮的点击事件，然后验证用户是否输入手机号以及手机号是否正确，有没有问题
+            // 开始倒计时
+            this.codeCountDown()
+          } catch (err) {
+            this.$message.error('获取验证码失败')
+            this.codeLoading = false
+          }
         })
-      })
+      } catch (err) {
+        this.$message.error('获取验证码失败')
+        this.codeLoading = false
+      }
     },
-
     // 验证码倒计时
     codeCountDown () {
       this.codeTimer = window.setInterval(() => {

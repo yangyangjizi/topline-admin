@@ -1,0 +1,8 @@
+/* 在此处设置其css属性的目的，是和此index.vue的中的富文本组件共同加载 */
+
+.ql-editor{
+    height:300px;
+}
+.ql-editor ol, .ql-editor ul {
+    padding:0;
+}
