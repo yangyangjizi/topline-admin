@@ -78,7 +78,6 @@ const router = new Router({
 // 全局前置守卫，当你访问路由页面的时候，会先进入到这里、
 // to 是要去哪儿的相关参数，  from 是来自哪里的相关数据。 next， 是允许通过的方法
 router.beforeEach((to, from, next) => {
-  next()
   // 路由导航前，开启进度条
   nprogress.start()
   // const userInfo = window.localStorage.getItem('user_info')
